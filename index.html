@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔖 Bookmark Hub</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔖</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- TOOLBAR -->
+<header class="toolbar" id="toolbar">
+    <div class="tb-left">
+        <button class="tb-ham" id="hamBtn" aria-label="Меню"><span></span><span></span><span></span></button>
+        <div class="tb-logo">🔖 <span class="tb-logo-text">Bookmark Hub</span></div>
+        <span class="tb-count" id="tbCount"></span>
+    </div>
+    <div class="tb-center">
+        <div class="search-box">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" id="sinp" placeholder="Шукати закладки… (Ctrl+K)" autocomplete="off">
+            <button class="search-clear" id="scl">&times;</button>
+            <span class="search-cnt" id="scnt"></span>
+        </div>
+    </div>
+    <div class="tb-right">
+        <button class="tb-btn tb-add" id="addBtn" title="Додати закладку">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+            <span class="tb-add-label">Додати</span>
+        </button>
+        <button class="tb-btn" id="favBtn" title="Обрані">⭐</button>
+        <button class="tb-btn" id="impBtn" title="Імпорт (вставити)">📋</button>
+        <button class="tb-btn" id="expBtn" title="Експорт">📥</button>
+        <button class="tb-btn" id="thBtn" title="Тема">🌙</button>
+    </div>
+</header>
+
+<!-- APP LAYOUT -->
+<div class="app">
+    <div class="sov" id="sov"></div>
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sid-group">
+            <div class="sid-label">Категорії</div>
+            <div id="tree"></div>
+        </div>
+        <div class="sid-divider"></div>
+        <div class="sid-group">
+            <div class="sid-label">Теги</div>
+            <input type="text" class="sid-input" id="tagSearch" placeholder="Фільтр тегів…">
+            <div class="tag-list" id="tagList"></div>
+        </div>
+        <div class="sid-divider"></div>
+        <div class="sid-group sid-stats" id="sidStats"></div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+        <!-- Controls bar -->
+        <div class="controls-bar" id="controlsBar">
+            <div class="controls-left">
+                <button class="ctrl-btn spot-trigger" onclick="openSpotlight()" title="Швидкий пошук (Ctrl+K)">🔍 <span class="spot-label">Швидкий пошук</span> <kbd>Ctrl+K</kbd></button>
+            </div>
+            <div class="controls-right">
+                <div class="ctrl-group">
+                    <span class="ctrl-label">Сортування:</span>
+                    <button class="sort-opt" data-sort="default" title="За замовчуванням">📋</button>
+                    <button class="sort-opt" data-sort="name" title="А→Я">🔤</button>
+                    <button class="sort-opt" data-sort="free" title="Безкоштовні першими">🆓</button>
+                </div>
+                <div class="ctrl-divider"></div>
+                <div class="ctrl-group">
+                    <span class="ctrl-label">Вигляд:</span>
+                    <button class="view-opt" data-view="normal" title="Звичайний">☰</button>
+                    <button class="view-opt" data-view="compact" title="Компактний">▤</button>
+                </div>
+            </div>
+        </div>
+        <!-- Category nav pills -->
+        <div class="cat-nav" id="catNav"></div>
+        <div id="mc"></div>
+        <div class="empty-state" id="nores">
+            <div class="empty-icon">🔎</div>
+            <div class="empty-title">Нічого не знайдено</div>
+            <div class="empty-desc">Спробуйте змінити запит або фільтри</div>
+        </div>
+    </main>
+</div>
+
+<!-- BACK TO TOP -->
+<button class="back-top" id="backTop" title="Нагору">↑</button>
+
+<!-- ADD / EDIT MODAL -->
+<div class="modal-ov" id="modalOv">
+    <div class="modal" id="bmModal">
+        <div class="modal-hdr">
+            <h3 id="modalTitle">Додати закладку</h3>
+            <button class="modal-x" id="modalClose">&times;</button>
+        </div>
+        <form id="bmForm" class="modal-body">
+            <div class="fm-row fm-row-2">
+                <div class="fm-group">
+                    <label for="fEmoji">Емодзі</label>
+                    <input id="fEmoji" placeholder="🔗" maxlength="4">
+                </div>
+                <div class="fm-group fm-grow">
+                    <label for="fName">Назва <span class="req">*</span></label>
+                    <input id="fName" required placeholder="Назва закладки">
+                </div>
+            </div>
+            <div class="fm-group">
+                <label for="fUrl">URL <span class="req">*</span></label>
+                <input id="fUrl" type="url" required placeholder="https://example.com">
+            </div>
+            <div class="fm-group">
+                <label for="fDesc">Опис</label>
+                <textarea id="fDesc" rows="2" placeholder="Короткий опис ресурсу…"></textarea>
+            </div>
+            <div class="fm-row fm-row-2">
+                <div class="fm-group">
+                    <label for="fCat">Категорія</label>
+                    <select id="fCat"></select>
+                </div>
+                <div class="fm-group">
+                    <label for="fTags">Теги (через кому)</label>
+                    <input id="fTags" placeholder="дизайн, web, free">
+                </div>
+            </div>
+            <div class="fm-checks">
+                <label class="fm-check"><input type="checkbox" id="fFree"><span class="checkmark"></span> Безкоштовно</label>
+                <label class="fm-check"><input type="checkbox" id="fInc"><span class="checkmark"></span> Неймовірно безкоштовно</label>
+            </div>
+            <div class="fm-actions">
+                <button type="button" class="btn btn-ghost" id="modalCancel">Скасувати</button>
+                <button type="button" class="btn btn-danger" id="modalDel">Видалити</button>
+                <button type="submit" class="btn btn-primary">Зберегти</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- IMPORT MODAL -->
+<div class="modal-ov" id="importOv">
+    <div class="modal import-modal">
+        <div class="modal-hdr">
+            <h3>📋 Імпорт закладок</h3>
+            <button class="modal-x" id="importClose">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p class="import-hint">Вставте закладки у форматі JS-об'єктів:</p>
+            <pre class="import-example">{id:1,n:'Назва',u:'https://...',d:'Опис',c:'категорія',t:['тег1','тег2'],e:'🔗',f:1,inc:0}</pre>
+            <textarea id="importArea" rows="12" placeholder="Вставте закладки сюди...
+Підтримуються коментарі // та формат BM.push(...);"></textarea>
+            <div class="import-info" id="importInfo"></div>
+            <div class="import-options">
+                <label class="fm-check"><input type="checkbox" id="importAutoId" checked><span class="checkmark"></span> Автоматична нумерація ID</label>
+                <label class="fm-check"><input type="checkbox" id="importAutoCat"><span class="checkmark"></span> Створювати відсутні категорії</label>
+            </div>
+            <div class="fm-actions">
+                <button type="button" class="btn btn-ghost" id="importPreview">👁️ Попередній перегляд</button>
+                <button type="button" class="btn btn-ghost" id="importCancel">Скасувати</button>
+                <button type="button" class="btn btn-primary" id="importSave">✅ Імпортувати</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SPOTLIGHT -->
+<div class="spot-ov" id="spotOv">
+    <div class="spot-box">
+        <div class="spot-search">
+            <svg class="spot-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" id="spotInp" placeholder="Шукати закладки, сайти, теги…" autocomplete="off">
+            <kbd class="spot-kbd">Esc</kbd>
+        </div>
+        <div class="spot-results" id="spotList"></div>
+    </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- EASTER EGG -->
+<div class="modal-ov" id="eem">
+    <div class="modal" style="max-width:360px;text-align:center;padding:32px">
+        <div style="font-size:3rem;margin-bottom:12px">🎮🏆</div>
+        <h2 style="margin-bottom:6px">Konami Code!</h2>
+        <p style="color:var(--t3);margin-bottom:16px">Ти знайшов секрет! 🚀</p>
+        <button class="btn btn-primary" id="eecl">Круто! 😎</button>
+    </div>
+</div>
+
+<script src="categories.js"></script>
+<script src="data.js"></script>
+<script src="data2.js"></script>
+<script src="data3.js"></script>
+<script src="data4.js"></script>
+<script src="data5.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
