@@ -108,6 +108,10 @@ const CAT_TREE = [
                     { id: 'ml', name: 'Machine Learning', emoji: '🧠' },
                     { id: 'ai-text', name: 'ШІ для тексту та копірайтингу', emoji: '📝' },
                     { id: 'ai-code', name: 'ШІ для коду (Copilot, Cursor)', emoji: '💻' },
+                    { id: 'ai-transcription', name: 'Транскрипція (аудіо → текст)', emoji: '🎙️' },
+                    { id: 'ai-pdf', name: 'AI для PDF', emoji: '📄' },
+                    { id: 'ai-3d', name: 'AI для 3D та CAD', emoji: '📐' },
+                    { id: 'ai-docs', name: 'AI для документації та ТЗ', emoji: '📋' },
                     { id: 'ai-automation', name: 'Автоматизація (Zapier, Make)', emoji: '⚙️' }
                 ]
             },
