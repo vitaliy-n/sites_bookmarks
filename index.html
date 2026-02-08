@@ -33,6 +33,7 @@
             <span class="tb-add-label">Додати</span>
         </button>
         <button class="tb-btn" id="favBtn" title="Обрані">⭐</button>
+        <button class="tb-btn" id="impBtn" title="Імпорт (вставити)">📋</button>
         <button class="tb-btn" id="expBtn" title="Експорт">📥</button>
         <button class="tb-btn" id="thBtn" title="Тема">🌙</button>
     </div>
@@ -59,6 +60,28 @@
 
     <!-- MAIN -->
     <main class="main">
+        <!-- Controls bar -->
+        <div class="controls-bar" id="controlsBar">
+            <div class="controls-left">
+                <button class="ctrl-btn spot-trigger" onclick="openSpotlight()" title="Швидкий пошук (Ctrl+K)">🔍 <span class="spot-label">Швидкий пошук</span> <kbd>Ctrl+K</kbd></button>
+            </div>
+            <div class="controls-right">
+                <div class="ctrl-group">
+                    <span class="ctrl-label">Сортування:</span>
+                    <button class="sort-opt" data-sort="default" title="За замовчуванням">📋</button>
+                    <button class="sort-opt" data-sort="name" title="А→Я">🔤</button>
+                    <button class="sort-opt" data-sort="free" title="Безкоштовні першими">🆓</button>
+                </div>
+                <div class="ctrl-divider"></div>
+                <div class="ctrl-group">
+                    <span class="ctrl-label">Вигляд:</span>
+                    <button class="view-opt" data-view="normal" title="Звичайний">☰</button>
+                    <button class="view-opt" data-view="compact" title="Компактний">▤</button>
+                </div>
+            </div>
+        </div>
+        <!-- Category nav pills -->
+        <div class="cat-nav" id="catNav"></div>
         <div id="mc"></div>
         <div class="empty-state" id="nores">
             <div class="empty-icon">🔎</div>
@@ -67,6 +90,9 @@
         </div>
     </main>
 </div>
+
+<!-- BACK TO TOP -->
+<button class="back-top" id="backTop" title="Нагору">↑</button>
 
 <!-- ADD / EDIT MODAL -->
 <div class="modal-ov" id="modalOv">
@@ -117,6 +143,44 @@
     </div>
 </div>
 
+<!-- IMPORT MODAL -->
+<div class="modal-ov" id="importOv">
+    <div class="modal import-modal">
+        <div class="modal-hdr">
+            <h3>📋 Імпорт закладок</h3>
+            <button class="modal-x" id="importClose">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p class="import-hint">Вставте закладки у форматі JS-об'єктів:</p>
+            <pre class="import-example">{id:1,n:'Назва',u:'https://...',d:'Опис',c:'категорія',t:['тег1','тег2'],e:'🔗',f:1,inc:0}</pre>
+            <textarea id="importArea" rows="12" placeholder="Вставте закладки сюди...
+Підтримуються коментарі // та формат BM.push(...);"></textarea>
+            <div class="import-info" id="importInfo"></div>
+            <div class="import-options">
+                <label class="fm-check"><input type="checkbox" id="importAutoId" checked><span class="checkmark"></span> Автоматична нумерація ID</label>
+                <label class="fm-check"><input type="checkbox" id="importAutoCat"><span class="checkmark"></span> Створювати відсутні категорії</label>
+            </div>
+            <div class="fm-actions">
+                <button type="button" class="btn btn-ghost" id="importPreview">👁️ Попередній перегляд</button>
+                <button type="button" class="btn btn-ghost" id="importCancel">Скасувати</button>
+                <button type="button" class="btn btn-primary" id="importSave">✅ Імпортувати</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SPOTLIGHT -->
+<div class="spot-ov" id="spotOv">
+    <div class="spot-box">
+        <div class="spot-search">
+            <svg class="spot-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" id="spotInp" placeholder="Шукати закладки, сайти, теги…" autocomplete="off">
+            <kbd class="spot-kbd">Esc</kbd>
+        </div>
+        <div class="spot-results" id="spotList"></div>
+    </div>
+</div>
+
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
@@ -133,6 +197,9 @@
 <script src="categories.js"></script>
 <script src="data.js"></script>
 <script src="data2.js"></script>
+<script src="data3.js"></script>
+<script src="data4.js"></script>
+<script src="data5.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
