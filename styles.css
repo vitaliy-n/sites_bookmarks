@@ -636,6 +636,9 @@ input,textarea,select{font-family:var(--font)}
     font-size:.6rem;padding:1px 5px;border-radius:3px;
     background:var(--bg3);color:var(--t3);
 }
+.spot-item-cat{border-left:3px solid var(--ac)}
+.spot-item-cat .spot-name{color:var(--ac)}
+.spot-type-badge{font-size:.7rem;opacity:.6;flex-shrink:0}
 .spot-hint{padding:20px 18px;font-size:.84rem;color:var(--t3);text-align:center}
 .spot-shortcuts{
     display:flex;justify-content:center;gap:16px;padding:0 18px 16px;

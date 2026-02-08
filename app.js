@@ -78,6 +78,13 @@ function scoreMatch(bm, q) {
     if (bm.t.some(t => t.toLowerCase() === ql)) score += 25;
     // Tag contains
     else if (bm.t.some(t => t.toLowerCase().includes(ql))) score += 12;
+    // Category name match
+    const cat = getCatById(bm.c);
+    if (cat) {
+        const catNl = cat.name.toLowerCase();
+        if (catNl === ql) score += 20;
+        else if (catNl.includes(ql)) score += 8;
+    }
     // Fuzzy name match (last resort)
     if (score === 0) {
         let qi = 0;
@@ -90,6 +97,21 @@ function scoreMatch(bm, q) {
         if (bm.f) score += 1;
     }
     return score;
+}
+
+/* Find categories matching a query */
+function findMatchingCats(q) {
+    if (!q) return [];
+    const ql = q.toLowerCase();
+    return CATS.map(c => {
+        const nl = c.name.toLowerCase();
+        let score = 0;
+        if (nl === ql) score = 100;
+        else if (nl.startsWith(ql)) score = 60;
+        else if (nl.includes(ql)) score = 30;
+        else if (c.id.includes(ql)) score = 15;
+        return { cat: c, score };
+    }).filter(x => x.score > 0).sort((a, b) => b.score - a.score);
 }
 
 function highlightText(text, q) {
@@ -793,17 +815,38 @@ function renderSpotHints() {
 function spotSearch(q) {
     if (!q) { spotList.innerHTML = renderSpotHints(); spotResults = []; return; }
     const all = getAllBM();
-    spotResults = all.map(b => ({ bm: b, score: scoreMatch(b, q) }))
+    // Category matches first
+    const catMatches = findMatchingCats(q).slice(0, 5);
+    // Bookmark matches
+    const bmMatches = all.map(b => ({ bm: b, score: scoreMatch(b, q) }))
         .filter(x => x.score > 0)
         .sort((a, b) => b.score - a.score)
-        .slice(0, 12)
+        .slice(0, 12 - catMatches.length)
         .map(x => x.bm);
+    // Build combined results: categories (type:'cat') + bookmarks (type:'bm')
+    spotResults = [];
+    catMatches.forEach(cm => spotResults.push({ type: 'cat', cat: cm.cat }));
+    bmMatches.forEach(b => spotResults.push({ type: 'bm', bm: b }));
     spotIdx = 0;
     if (!spotResults.length) {
         spotList.innerHTML = '<div class="spot-hint">Нічого не знайдено 😕</div>';
         return;
     }
-    spotList.innerHTML = spotResults.map((b, i) => {
+    spotList.innerHTML = spotResults.map((item, i) => {
+        if (item.type === 'cat') {
+            const c = item.cat;
+            const descIds = getCatDescendantIds(c.id);
+            const cnt = all.filter(b => descIds.includes(b.c)).length;
+            return `<div class="spot-item spot-item-cat${i === 0 ? ' active' : ''}" data-idx="${i}" onmouseenter="spotHover(${i})" onclick="spotGo(${i})">
+                <span class="spot-emoji">${c.emoji}</span>
+                <div class="spot-info">
+                    <div class="spot-name">${highlightText(c.name, q)}</div>
+                    <div class="spot-meta">📂 Категорія · ${cnt} закладок</div>
+                </div>
+                <span class="spot-type-badge">📂</span>
+            </div>`;
+        }
+        const b = item.bm;
         const cat = getCatById(b.c);
         const catLabel = cat ? `<span class="spot-cat">${cat.emoji} ${cat.name}</span>` : '';
         return `<div class="spot-item${i === 0 ? ' active' : ''}" data-idx="${i}" onmouseenter="spotHover(${i})" onclick="spotGo(${i})">
@@ -821,10 +864,49 @@ function spotHover(i) {
     spotList.querySelectorAll('.spot-item').forEach((el, j) => el.classList.toggle('active', j === i));
 }
 function spotGo(i) {
-    const b = spotResults[i];
-    if (!b) return;
+    const item = spotResults[i];
+    if (!item) return;
     closeSpotlight();
-    window.open(b.u, '_blank');
+    if (item.type === 'cat') {
+        scrollToCatById(item.cat.id);
+    } else {
+        window.open(item.bm.u, '_blank');
+    }
+}
+function scrollToCatById(catId) {
+    // Clear search state, render all, then scroll to category
+    sinp.value = ''; sq = ''; scl.classList.remove('show');
+    activeCatFilter = null; activeTag = null; showFav = false;
+    document.getElementById('favBtn').classList.remove('active');
+    render();
+    setTimeout(() => {
+        const path = getCatPath(catId);
+        const topId = path.length ? path[0].id : catId;
+        // Uncollapse the top-level category if collapsed
+        if (collSt.includes(topId)) togCat(topId);
+        const el = document.getElementById('cat-' + topId);
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // Highlight briefly
+            const hdr = el.querySelector('.cat-hdr');
+            if (hdr) { hdr.style.background = 'var(--ac-bg)'; setTimeout(() => hdr.style.background = '', 1500); }
+        }
+        // If it's a subcategory, also uncollapse and scroll to it
+        if (path.length > 1) {
+            setTimeout(() => {
+                // Uncollapse subcategory chain
+                for (let k = 1; k < path.length; k++) {
+                    if (subCollSt.includes(path[k].id)) togSubCat(path[k].id);
+                }
+                const subEl = document.getElementById('sub-' + catId) || document.querySelector(`[onclick*="togSubCat('${catId}')"]`);
+                if (subEl) {
+                    subEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    subEl.style.background = 'var(--ac-bg)';
+                    setTimeout(() => subEl.style.background = '', 1500);
+                }
+            }, 200);
+        }
+    }, 50);
 }
 function spotNav(dir) {
     if (!spotResults.length) return;
@@ -920,6 +1002,18 @@ const doSearch = deb(() => {
     render();
 }, 150);
 sinp.addEventListener('input', doSearch);
+sinp.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        const q = sinp.value.trim();
+        if (!q) return;
+        // Check if query matches a category — if so, jump to it
+        const catMatches = findMatchingCats(q);
+        if (catMatches.length > 0) {
+            scrollToCatById(catMatches[0].cat.id);
+        }
+    }
+});
 scl.addEventListener('click', () => { sinp.value = ''; sq = ''; scl.classList.remove('show'); activeCatFilter = null; render(); });
 
 /* Tag search */
