@@ -667,6 +667,40 @@ input,textarea,select{font-family:var(--font)}
 .bm-cat-pill:hover{background:var(--ac);color:#fff}
 
 /* ============================================
+   ACTIVE FILTER BREADCRUMB
+   ============================================ */
+.active-filter{
+    padding:6px 16px;display:flex;align-items:center;gap:8px;
+    background:var(--ac-bg);border-bottom:1px solid var(--brd);
+    animation:slideDown .2s ease;
+}
+.filter-crumb{
+    display:inline-flex;align-items:center;gap:6px;
+    font-size:.78rem;font-weight:500;color:var(--ac);
+    padding:3px 10px;border-radius:6px;
+    background:var(--bg);border:1px solid var(--ac);
+}
+.filter-crumb-x{
+    background:none;border:none;color:var(--ac);cursor:pointer;
+    font-size:.8rem;padding:0 2px;opacity:.7;transition:opacity .1s;
+}
+.filter-crumb-x:hover{opacity:1}
+
+/* ============================================
+   FLASH ANIMATIONS
+   ============================================ */
+@keyframes catFlash{
+    0%{background:var(--ac-bg2)}
+    100%{background:transparent}
+}
+.cat-hdr-flash{animation:catFlash 1.5s ease forwards}
+.subcat-hdr-flash{animation:catFlash 1.5s ease forwards;border-radius:4px}
+@keyframes slideDown{
+    from{opacity:0;transform:translateY(-6px)}
+    to{opacity:1;transform:translateY(0)}
+}
+
+/* ============================================
    COMPACT VIEW
    ============================================ */
 .compact-view .bm-row{padding:2px 12px;gap:6px}

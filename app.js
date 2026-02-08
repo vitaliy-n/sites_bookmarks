@@ -31,7 +31,7 @@ function getAllBM() {
     _bmCacheDirty = false;
     return _bmCache;
 }
-function invalidateCache() { _bmCacheDirty = true; }
+function invalidateCache() { _bmCacheDirty = true; clearDescCache(); }
 
 /* ============================================
    UTILITIES
@@ -256,14 +256,23 @@ function buildSidStats() {
 /* ============================================
    FILTERING (with scoring & sorting)
    ============================================ */
+/* Cached descendant ID sets for performance */
+const _descCache = new Map();
+function getDescSet(catId) {
+    if (_descCache.has(catId)) return _descCache.get(catId);
+    const s = new Set(getCatDescendantIds(catId));
+    _descCache.set(catId, s);
+    return s;
+}
+function clearDescCache() { _descCache.clear(); }
+
 function getFiltered() {
     let items = getAllBM();
     const favSet = new Set(favs);
     if (showFav) items = items.filter(b => favSet.has(b.id));
     if (activeTag) items = items.filter(b => b.t.includes(activeTag));
     if (activeCatFilter) {
-        const descIds = getCatDescendantIds(activeCatFilter);
-        const descSet = new Set(descIds);
+        const descSet = getDescSet(activeCatFilter);
         items = items.filter(b => descSet.has(b.c));
     }
     if (sq) {
@@ -337,6 +346,21 @@ function render() {
     mc.innerHTML = '';
     mc.appendChild(frag);
 
+    // Active filter breadcrumb
+    const filterBar = document.getElementById('activeFilter');
+    if (filterBar) {
+        if (activeCatFilter) {
+            const fc = getCatById(activeCatFilter);
+            filterBar.innerHTML = `<div class="filter-crumb">${fc ? fc.emoji + ' ' + fc.name : activeCatFilter} <button onclick="toggleCatFilter(null)" class="filter-crumb-x">✕</button></div>`;
+            filterBar.style.display = 'flex';
+        } else if (activeTag) {
+            filterBar.innerHTML = `<div class="filter-crumb">#${activeTag} <button onclick="filterTag('${activeTag}')" class="filter-crumb-x">✕</button></div>`;
+            filterBar.style.display = 'flex';
+        } else {
+            filterBar.style.display = 'none';
+        }
+    }
+
     // Update counters
     document.getElementById('scnt').textContent =
         isSearch ? `${total}/${getAllBM().length}` : '';
@@ -357,8 +381,8 @@ function renderSubCatGroups(node, items) {
     if (direct.length) html += direct.map(b => rowHTML(b)).join('');
     // Sub-groups
     node.children.forEach(child => {
-        const childIds = getCatDescendantIds(child.id);
-        const childItems = items.filter(b => childIds.includes(b.c));
+        const childSet = getDescSet(child.id);
+        const childItems = items.filter(b => childSet.has(b.c));
         if (!childItems.length) return;
         const isSub = subCollSt.includes(child.id);
         html += `<div class="subcat-group">
@@ -874,37 +898,39 @@ function spotGo(i) {
     }
 }
 function scrollToCatById(catId) {
-    // Clear search state, render all, then scroll to category
+    // Clear search, set category filter to show only this category
     sinp.value = ''; sq = ''; scl.classList.remove('show');
-    activeCatFilter = null; activeTag = null; showFav = false;
+    activeTag = null; showFav = false;
     document.getElementById('favBtn').classList.remove('active');
+    // Find top-level parent for this category
+    const path = getCatPath(catId);
+    const topId = path.length ? path[0].id : catId;
+    // Set filter to top-level category
+    activeCatFilter = topId;
+    // Uncollapse if needed
+    if (collSt.includes(topId)) collSt = collSt.filter(c => c !== topId);
+    save('bh_coll', collSt);
     render();
     setTimeout(() => {
-        const path = getCatPath(catId);
-        const topId = path.length ? path[0].id : catId;
-        // Uncollapse the top-level category if collapsed
-        if (collSt.includes(topId)) togCat(topId);
         const el = document.getElementById('cat-' + topId);
         if (el) {
-            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            // Highlight briefly
+            mainEl.scrollTo({ top: 0, behavior: 'smooth' });
             const hdr = el.querySelector('.cat-hdr');
-            if (hdr) { hdr.style.background = 'var(--ac-bg)'; setTimeout(() => hdr.style.background = '', 1500); }
+            if (hdr) { hdr.classList.add('cat-hdr-flash'); setTimeout(() => hdr.classList.remove('cat-hdr-flash'), 1500); }
         }
-        // If it's a subcategory, also uncollapse and scroll to it
+        // If subcategory, uncollapse chain and scroll to it
         if (path.length > 1) {
             setTimeout(() => {
-                // Uncollapse subcategory chain
                 for (let k = 1; k < path.length; k++) {
                     if (subCollSt.includes(path[k].id)) togSubCat(path[k].id);
                 }
-                const subEl = document.getElementById('sub-' + catId) || document.querySelector(`[onclick*="togSubCat('${catId}')"]`);
-                if (subEl) {
-                    subEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    subEl.style.background = 'var(--ac-bg)';
-                    setTimeout(() => subEl.style.background = '', 1500);
+                const subHdr = document.querySelector(`[onclick*="togSubCat('${catId}')"]`);
+                if (subHdr) {
+                    subHdr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    subHdr.classList.add('subcat-hdr-flash');
+                    setTimeout(() => subHdr.classList.remove('subcat-hdr-flash'), 1500);
                 }
-            }, 200);
+            }, 150);
         }
     }, 50);
 }
@@ -931,9 +957,11 @@ function updateCatNav() {
     const nav = document.getElementById('catNav');
     if (!nav) return;
     const all = getAllBM();
+    const catSet = new Set(all.map(b => b.c));
     nav.innerHTML = CAT_TREE.filter(c => {
-        const descIds = getCatDescendantIds(c.id);
-        return all.some(b => descIds.includes(b.c));
+        const descSet = getDescSet(c.id);
+        for (const id of catSet) if (descSet.has(id)) return true;
+        return false;
     }).map(c =>
         `<button class="cnav-pill${activeCatFilter === c.id ? ' active' : ''}" onclick="toggleCatFilter('${c.id}')" title="${c.name}">${c.emoji}</button>`
     ).join('') + (activeCatFilter ? `<button class="cnav-pill cnav-clear" onclick="toggleCatFilter(null)" title="Скинути">✕</button>` : '');
@@ -942,8 +970,7 @@ function toggleCatFilter(id) {
     activeCatFilter = (activeCatFilter === id) ? null : id;
     render();
     if (id) {
-        const el = document.getElementById('cat-' + id);
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        mainEl.scrollTo({ top: 0, behavior: 'smooth' });
     }
 }
 function jumpToCat(catId) {

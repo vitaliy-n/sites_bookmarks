@@ -112,6 +112,11 @@ const CAT_TREE = [
                     { id: 'ai-pdf', name: 'AI для PDF', emoji: '📄' },
                     { id: 'ai-3d', name: 'AI для 3D та CAD', emoji: '📐' },
                     { id: 'ai-docs', name: 'AI для документації та ТЗ', emoji: '📋' },
+                    { id: 'ai-search', name: 'AI-пошук та дослідження', emoji: '🔍' },
+                    { id: 'ai-presentation', name: 'AI для презентацій', emoji: '📊' },
+                    { id: 'ai-design', name: 'AI для дизайну та UI', emoji: '🎨' },
+                    { id: 'ai-data', name: 'AI для даних та аналітики', emoji: '📈' },
+                    { id: 'ai-agents', name: 'AI-агенти та автономні системи', emoji: '🤖' },
                     { id: 'ai-automation', name: 'Автоматизація (Zapier, Make)', emoji: '⚙️' }
                 ]
             },
